@@ -1,4 +1,8 @@
 /* 软件资料库 - 样式（电脑 / 手机自适应） */
+
+/* 全局兜底：hidden 属性必须永远生效（防止 display:flex 类压过它） */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #f4f5fb;
   --card: #ffffff;
