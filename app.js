@@ -12,6 +12,7 @@ let sb = null;            // Supabase 客户端
 let currentUser = null;   // 当前登录用户
 let items = [];           // 软件记录
 let editingId = null;     // 正在编辑的记录 id
+let editingFilePath = null; // 正在编辑的记录已有的安装包路径
 let signupMode = false;   // 登录页当前模式
 let realtimeChannel = null;
 const revealedLicenses = new Set(); // 卡片上已点开明文的序列号
@@ -245,6 +246,7 @@ function cardHtml(x) {
   }
   if (x.download_url) rows.push(`<div class="meta-row"><span>下载</span><a href="${esc(x.download_url)}" target="_blank" rel="noopener">${esc(x.download_url)}</a></div>`);
   if (x.homepage) rows.push(`<div class="meta-row"><span>官网</span><a href="${esc(x.homepage)}" target="_blank" rel="noopener">${esc(x.homepage)}</a></div>`);
+  if (x.file_path) rows.push(`<div class="meta-row"><span>安装包</span><button class="mini-btn" data-act="download" data-id="${id}">⬇ 下载</button></div>`);
 
   const time = (x.updated_at || '').slice(0, 16).replace('T', ' ');
   return (
@@ -282,6 +284,9 @@ function handleListClick(e) {
     case 'copy':
       copyText(item.license_key || '');
       break;
+    case 'download':
+      downloadPackage(item);
+      break;
     case 'edit':
       openModal(item);
       break;
@@ -294,6 +299,7 @@ function handleListClick(e) {
 /* ---------- 新增 / 编辑 ---------- */
 function openModal(item) {
   editingId = item ? item.id : null;
+  editingFilePath = item ? item.file_path || '' : '';
   $('#modal-title').textContent = item ? '编辑软件' : '添加软件';
   $('#f-name').value = item ? item.name : '';
   $('#f-category').value = item ? item.category || '' : '';
@@ -302,6 +308,7 @@ function openModal(item) {
   $('#f-download').value = item ? item.download_url || '' : '';
   $('#f-homepage').value = item ? item.homepage || '' : '';
   $('#f-notes').value = item ? item.notes || '' : '';
+  $('#f-file').value = '';
   show('#modal-backdrop');
   setTimeout(() => $('#f-name').focus(), 50);
 }
@@ -328,7 +335,33 @@ async function saveItem(e) {
 
   const btn = $('#save-btn');
   btn.disabled = true;
+  btn.textContent = '保存中…';
   try {
+    // 有选安装包文件 → 先传云端
+    const fileInput = $('#f-file');
+    const file = fileInput.files && fileInput.files[0];
+    if (file) {
+      if (file.size > 500 * 1024 * 1024) {
+        toast('文件超过 500MB 上限，请压缩后再传', true, 5000);
+        return;
+      }
+      const safeName = file.name.replace(/[\\/:*?"<>|]+/g, '_');
+      const path = currentUser.id + '/' + Date.now() + '_' + safeName;
+      const { error: upErr } = await sb.storage.from('software-files').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (upErr) {
+        toast('安装包上传失败：' + upErr.message, true, 6000);
+        return;
+      }
+      payload.file_path = path;
+      // 编辑时换新包 → 顺手删旧包
+      if (editingId && editingFilePath) {
+        sb.storage.from('software-files').remove([editingFilePath]);
+      }
+    }
+
     const { error } = editingId
       ? await sb.from('software').update(payload).eq('id', editingId)
       : await sb.from('software').insert(payload);
@@ -341,14 +374,34 @@ async function saveItem(e) {
     }
   } finally {
     btn.disabled = false;
+    btn.textContent = '保存';
   }
 }
 
 async function deleteItem(id, name) {
   if (!confirm(`确定删除「${name}」？删除后无法恢复。`)) return;
   const { error } = await sb.from('software').delete().eq('id', id);
-  if (error) toast('删除失败：' + error.message, true, 5000);
-  else { await loadItems(); toast('已删除'); }
+  if (error) { toast('删除失败：' + error.message, true, 5000); return; }
+  // 顺手清掉云端安装包（尽力而为，失败不影响）
+  const item = items.find((x) => x.id === id);
+  if (item && item.file_path) {
+    sb.storage.from('software-files').remove([item.file_path]);
+  }
+  await loadItems();
+  toast('已删除');
+}
+
+async function downloadPackage(item) {
+  if (!item.file_path) return;
+  toast('正在生成下载链接…');
+  const { data, error } = await sb.storage
+    .from('software-files')
+    .createSignedUrl(item.file_path, 3600);
+  if (error || !data || !data.signedUrl) {
+    toast('获取下载链接失败：' + (error && error.message || '未知错误'), true, 5000);
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
 }
 
 /* ---------- 工具 ---------- */
