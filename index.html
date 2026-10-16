@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>软件资料库</title>
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 未配置 Supabase 时的提示 -->
+  <div id="setup-notice" class="setup-notice" hidden>
+    <div class="setup-card">
+      <div class="setup-emoji">🔌</div>
+      <h2>还没连接 Supabase</h2>
+      <p>打开本目录下的 <code>config.js</code>，把 <code>url</code> 和 <code>anonKey</code> 换成你在 Supabase 控制台（Settings → API）拿到的值，保存后刷新本页。</p>
+      <p class="setup-hint">详细步骤见《操作指南.md》第 1-4 步。</p>
+    </div>
+  </div>
+
+  <!-- 登录 / 注册 -->
+  <section id="auth-view" class="auth-view" hidden>
+    <div class="auth-card">
+      <div class="auth-logo">📦</div>
+      <h1>软件资料库</h1>
+      <p class="auth-sub">云端同步 · 电脑手机随时查</p>
+      <form id="auth-form" autocomplete="on">
+        <input id="auth-email" type="email" placeholder="邮箱" required autocomplete="email">
+        <input id="auth-password" type="password" placeholder="密码（至少 6 位）" required minlength="6"
+               autocomplete="current-password">
+        <button id="auth-submit" type="submit" class="btn primary block">登录</button>
+      </form>
+      <p class="auth-switch" id="auth-switch">还没有账号？<a href="#" id="auth-toggle">注册一个</a></p>
+    </div>
+  </section>
+
+  <!-- 主界面 -->
+  <div id="app-view" hidden>
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-title">
+          <h1>📦 软件资料库</h1>
+          <p class="hero-sub">
+            <span id="live-dot" class="dot" title="实时同步状态"></span>
+            <span id="live-text">连接中…</span>
+            <span class="sep">·</span>
+            <span id="user-email"></span>
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button id="export-btn" class="btn ghost" type="button">导出备份</button>
+          <button id="logout-btn" class="btn ghost" type="button">退出</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="🔍 搜索名称 / 序列号 / 备注…">
+        <select id="category-filter">
+          <option value="">全部分类</option>
+        </select>
+        <button id="add-btn" class="btn primary" type="button">＋ 添加软件</button>
+      </div>
+
+      <p id="count-line" class="count-line"></p>
+      <div id="list" class="list"></div>
+    </main>
+  </div>
+
+  <!-- 新增 / 编辑弹窗 -->
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="modal-title">添加软件</h3>
+        <button id="modal-close" class="icon-btn" type="button" aria-label="关闭">✕</button>
+      </div>
+      <form id="item-form">
+        <label>软件名称 *</label>
+        <input id="f-name" required placeholder="例如：EasyCut">
+
+        <label>分类</label>
+        <input id="f-category" list="category-list" placeholder="例如：视频工具">
+        <datalist id="category-list">
+          <option value="视频工具"></option>
+          <option value="办公"></option>
+          <option value="设计"></option>
+          <option value="开发"></option>
+          <option value="系统/驱动"></option>
+          <option value="网络"></option>
+          <option value="安全"></option>
+          <option value="其他"></option>
+        </datalist>
+
+        <label>版本</label>
+        <input id="f-version" placeholder="例如：1.2.3">
+
+        <label>序列号 / 激活码</label>
+        <input id="f-license" placeholder="粘贴序列号，卡片上可一键复制">
+
+        <label>下载链接</label>
+        <input id="f-download" type="url" placeholder="https://…">
+
+        <label>官网</label>
+        <input id="f-homepage" type="url" placeholder="https://…">
+
+        <label>备注</label>
+        <textarea id="f-notes" rows="2" placeholder="购买日期、授权邮箱、注意事项…"></textarea>
+
+        <div class="modal-foot">
+          <button type="button" id="cancel-btn" class="btn ghost">取消</button>
+          <button type="submit" id="save-btn" class="btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

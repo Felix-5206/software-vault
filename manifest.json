@@ -1,0 +1,17 @@
+{
+  "name": "软件资料库",
+  "short_name": "软件库",
+  "description": "软件清单云端资料库 · 电脑手机实时同步",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f5fb",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
