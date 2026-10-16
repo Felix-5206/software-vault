@@ -10,6 +10,6 @@
  *  但 service_role key 绝对不能放进来！
  * ============================================================ */
 window.SOFTWARE_VAULT_CONFIG = {
-  url: "YOUR_SUPABASE_URL",
-  anonKey: "YOUR_SUPABASE_ANON_KEY",
+  url: "https://yfkgvrrnicjdlnnwxlkl.supabase.co",
+  anonKey: "sb_publishable_VUKL7xoR3JVerci6UUyb-w_BoSPYgTH",
 };
